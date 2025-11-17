@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn as nn
+from typing import Optional
 
 from vecset_vae.Model.diagonal_gaussian_distribution import (
     DiagonalGaussianDistribution,
@@ -23,6 +24,7 @@ class VecSetVAE(nn.Module):
         embed_dim: int = 64,
         width: int = 768,
         point_feats: int = 3,
+        input_sharp_pc: bool = True,
         embed_point_feats: bool = False,
         query_dim: int = 3,
         out_dim: int = 1,
@@ -45,6 +47,7 @@ class VecSetVAE(nn.Module):
         self.embed_dim = embed_dim
         self.width = width
         self.point_feats = point_feats
+        self.input_sharp_pc = input_sharp_pc
         self.embed_point_feats = embed_point_feats
         self.query_dim = query_dim
         self.out_dim = out_dim
@@ -71,6 +74,7 @@ class VecSetVAE(nn.Module):
             embedder=self.embedder,
             num_latents=self.num_latents,
             point_feats=self.point_feats,
+            input_sharp_pc=self.input_sharp_pc,
             embed_point_feats=self.embed_point_feats,
             width=self.width,
             heads=self.heads,
@@ -131,7 +135,7 @@ class VecSetVAE(nn.Module):
     def encode(
         self,
         coarse_surface: torch.FloatTensor,
-        sharp_surface: torch.FloatTensor,
+        sharp_surface: Optional[torch.FloatTensor] = None,
     ):
         """
         Args:
@@ -143,9 +147,13 @@ class VecSetVAE(nn.Module):
         """
 
         coarse_pc, coarse_feats = coarse_surface[..., :3], coarse_surface[..., 3:]
-        sharp_pc, sharp_feats = sharp_surface[..., :3], sharp_surface[..., 3:]
+        if sharp_surface is not None:
+            sharp_pc, sharp_feats = sharp_surface[..., :3], sharp_surface[..., 3:]
+        else:
+            sharp_pc = None
+            sharp_feats = None
         shape_latents = self.encoder(
-            coarse_pc, sharp_pc, coarse_feats, sharp_feats, split=self.split
+            coarse_pc, coarse_feats, sharp_pc, sharp_feats, split=self.split
         )
         return shape_latents
 
@@ -229,6 +237,7 @@ def build_dora_vae(num_latents: int = 64) -> nn.Module:
         embed_dim=64,
         width=768,
         point_feats=3,
+        input_sharp_pc=True,
         embed_point_feats=False,
         query_dim=3,
         out_dim=1,
@@ -256,6 +265,7 @@ def build_refine_vae(
         embed_dim=embed_dim,
         width=768,
         point_feats=3,
+        input_sharp_pc=True,
         embed_point_feats=False,
         query_dim=4,
         out_dim=1,
