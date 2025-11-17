@@ -45,7 +45,8 @@ class PerceiverCrossAttentionEncoder(nn.Module):
             self.input_proj = nn.Linear(self.embedder.out_dim * 2, width)
         else:
             self.input_proj = nn.Linear(self.embedder.out_dim + point_feats, width)
-            self.input_proj1 = nn.Linear(self.embedder.out_dim + point_feats, width)
+            if self.input_sharp_pc:
+                self.input_proj1 = nn.Linear(self.embedder.out_dim + point_feats, width)
 
         self.cross_attn = ResidualCrossAttentionBlock(
             width=width,
